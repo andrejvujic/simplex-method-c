@@ -1,10 +1,11 @@
 %{
     #include <stdio.h>
-    #include <math.h>
     #include <string.h>
     #include <stdlib.h>
     #include "../types.h"
-
+    #include "../constraints.h"
+    #include "../variables.h"
+    
     int yyparse(void);
     int yylex(void);
     int yyerror(char *);
@@ -18,54 +19,9 @@
     Function_t *function;
     Constraints_t *constraints;
 
+    int current_variables_num = 0;
     Variables_t *current_variables = NULL;
     Variable_t *last_variable = NULL;
-
-
-    void insert_into_constraints_list(Constraints_t* constraints, Constraint_t *element) {
-        if (constraints->head == NULL) {
-            constraints->head = element;
-            return;
-        }
-
-        Constraint_t* head = constraints->head;
-        while (head->next != NULL) head = head->next;
-        head->next = element;
-    }
-
-    void insert_into_variables_list(Variables_t* variables, Variable_t *element) {
-        if (variables->head == NULL) {
-            variables->head = element;
-            return;
-        }
-
-        Variable_t* head = variables->head;
-        while (head->next != NULL) head = head->next;
-        head->next = element;
-    }
-
-    int extract_index_from_variable(char *variable) {
-        int value = 0;
-        int length = strlen(variable);
-        int index = length - 1;
-        while (index > 0) {
-            int digit = variable[index] - '0';
-            value += digit * pow(10, (length - 1) - index);
-            --index;
-        }
-        return value;
-    }
-
-    void parse_variable(int coefficient, char *variable_str) {
-        int index = extract_index_from_variable(variable_str);
-        Variable_t* variable = (Variable_t*)malloc(sizeof(Variable_t));
-        variable->coefficient = coefficient;
-        variable->index = index;
-        variable->next = NULL;
-        insert_into_variables_list(current_variables, variable);
-
-        last_variable = variable;
-    }
 %}
 
 %union {
@@ -84,6 +40,7 @@
 %token _SEMICOLON
 
 %type <i> arithmetic_operator 
+%type <i> relational_operator
 
 %%
 
@@ -99,7 +56,9 @@ function
     {
         function = (Function_t*)malloc(sizeof(Function_t));
         function->variables = current_variables;
+        function->variables_num = current_variables_num;
         current_variables = NULL;
+        current_variables_num = 0;
     }
     ;
 
@@ -113,6 +72,7 @@ constraint
     {
         Constraint_t* constraint = (Constraint_t*)malloc(sizeof(Constraint_t));
         constraint->variables = current_variables;
+        constraint->type = $2;
         constraint->value = $3;
         
         if (constraints == NULL)
@@ -121,20 +81,22 @@ constraint
         insert_into_constraints_list(constraints, constraint);
 
         current_variables = NULL;
+        current_variables_num = 0;
     }
     ;
 
 variables
     : variable 
     | variables arithmetic_operator variable {
-        if ($2 == SUBTRACT)
+        if ($2 == SUBTRACT && last_variable != NULL) {
             last_variable->coefficient *= -1;
+        }
     }
     ;
 
 relational_operator
-    : _LT
-    | _GT
+    : _LT { $$ = LT; }
+    | _GT { $$ = GT; }
     ;
 
 arithmetic_operator
@@ -147,12 +109,14 @@ variable
     { 
         if (current_variables == NULL)
             current_variables = (Variables_t*)malloc(sizeof(Variable_t));
-        parse_variable($1, $2);
+        parse_variable(current_variables, &last_variable, $1, $2);
+        ++current_variables_num;
     }
     | _VAR { 
         if (current_variables == NULL)
             current_variables = (Variables_t*)malloc(sizeof(Variable_t));
-        parse_variable(1, $1);
+        parse_variable(current_variables, &last_variable, 1, $1);
+        ++current_variables_num;
     }
     ;
 
@@ -160,6 +124,5 @@ variable
 
 int yyerror(char *error) {
     fprintf(stderr, "Error on line %d: %s\n", yylineno, error);
-    
     return 0;
 }

@@ -12,6 +12,12 @@ enum FunctionOptimumType
     MAX
 };
 
+enum ConstraintType
+{
+    LT, // <=
+    GT  // >=
+};
+
 typedef struct Variable
 {
     struct Variable *next;
@@ -27,7 +33,7 @@ typedef struct Constraint
 {
     struct Constraint *next;
     Variables_t *variables;
-    int value;
+    int value, type;
 } Constraint_t;
 
 typedef struct Constraints
@@ -39,6 +45,7 @@ typedef struct Function
 {
     int optimum_type;
     Variables_t *variables;
+    int variables_num;
 } Function_t;
 
 typedef struct OptimizationProblem
