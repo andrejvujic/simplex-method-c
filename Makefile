@@ -5,10 +5,10 @@ OUTPUT = simplex
 
 all: parser/parser.tab.c parser/lex.yy.c $(OUTPUT)
 
-parser/parser.tab.c:
+parser/parser.tab.c: parser/parser.y
 	$(BISON) -d -o parser/parser.tab.c parser/parser.y
 
-parser/lex.yy.c: parser/parser.tab.c
+parser/lex.yy.c: parser/parser.tab.c parser/lexer.l
 	$(FLEX) -o parser/lex.yy.c parser/lexer.l
 
 $(OUTPUT): parser/parser.tab.c parser/lex.yy.c main.c constraints.c variables.c
