@@ -54,13 +54,13 @@ void print_constraint(Constraint_t *constraint)
         if (coefficient > 0 && variable_index > 0)
             printf("+");
 
-        printf("%fx%d", variable->coefficient, variable->index);
+        printf("%.3fx%d", variable->coefficient, variable->index);
 
         variable = variable->next;
         ++variable_index;
     }
 
-    printf("%s%f", (constraint->type == LT ? "<=" : ">="), constraint->value);
+    printf("%s%.3f", (constraint->type == LT ? "<=" : ">="), constraint->value);
 }
 
 void print_transformed_constraint(Constraint_t *constraint)
@@ -74,13 +74,13 @@ void print_transformed_constraint(Constraint_t *constraint)
         if (coefficient > 0 && variable_index > 0)
             printf("+");
 
-        printf("%fx%d", variable->coefficient, variable->index);
+        printf("%.3fx%d", variable->coefficient, variable->index);
 
         variable = variable->next;
         ++variable_index;
     }
 
-    printf("=%f", constraint->value);
+    printf("=%.3f", constraint->value);
 
     printf("\n");
 }

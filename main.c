@@ -99,7 +99,7 @@ void print_table(float **table, int table_rows, int table_cols)
     for (int i = 0; i < table_rows; ++i)
     {
         for (int j = 0; j < table_cols; ++j)
-            printf("%f ", table[i][j]);
+            printf("%.3f ", table[i][j]);
         printf("\n");
     }
 }
@@ -114,7 +114,12 @@ int get_pivot_row(float **table, float *division_result, int pivot_col, int tabl
     // element's row becomes the pivot row.
     for (int row_index = 0; row_index < table_rows - 1; ++row_index)
     {
-        printf("%f -> %f\n", table[row_index][pivot_col], division_result[row_index]);
+        float value = division_result[row_index];
+        int infinity = value == FLT_MAX || value == FLT_MIN;
+        if (infinity)
+            printf("%.3f -> %s\n", table[row_index][pivot_col], "infinity");
+        else
+            printf("%.3f -> %.3f\n", table[row_index][pivot_col], value);
 
         // We need the smallest positive value...
         // Negative values can be skipped.
@@ -149,7 +154,7 @@ int get_pivot_column(float **table, int table_rows, int table_cols, int optimum_
                 pivot_col = col_index;
             }
 
-        printf("\nSmallest value: %f, column index: %d\n", smallest, pivot_col);
+        printf("\nSmallest value: %.3f, column index: %d\n", smallest, pivot_col);
         break;
     }
     case MIN:
@@ -163,7 +168,7 @@ int get_pivot_column(float **table, int table_rows, int table_cols, int optimum_
                 pivot_col = col_index;
             }
 
-        printf("\nBiggest value: %f, column index: %d\n", biggest, pivot_col);
+        printf("\nBiggest value: %.3f, column index: %d\n", biggest, pivot_col);
         break;
     }
     }
@@ -251,7 +256,8 @@ int is_another_step_required(float **table, int table_rows, int table_cols, int 
 
 void simplex_step(float **table, int table_rows, int table_cols, int *basic_variables, int *non_basic_variables, int basic_variables_num, int non_basic_variables_num, int optimum_type, int step_index)
 {
-    printf("\nPerforming Simplex step number %d:\n", step_index + 1);
+    printf("\n--------------------------\n");
+    printf("Performing Simplex step number %d:\n", step_index + 1);
     // Looking for the function maximum...
     // We need to find the smallest (negative) number in the
     // of last row of the Simplex table.
@@ -276,7 +282,7 @@ void simplex_step(float **table, int table_rows, int table_cols, int *basic_vari
     int pivot_row = get_pivot_row(table, division_result, pivot_col, table_rows);
     free(division_result);
 
-    printf("\nThe pivot element is (%d, %d) = %f\n", pivot_row, pivot_col, table[pivot_row][pivot_col]);
+    printf("\nThe pivot element is (%d, %d) = %.3f\n", pivot_row, pivot_col, table[pivot_row][pivot_col]);
 
     printf("\nSwapping variables and recalculating table elements...\n");
     swap_variables(basic_variables, non_basic_variables, pivot_row, pivot_col);
@@ -297,14 +303,15 @@ void simplex_step(float **table, int table_rows, int table_cols, int *basic_vari
 
 void print_simplex_results(float **table, int table_rows, int table_cols, int *basic_variables, int *non_basic_variables, int basic_variables_num, int non_basic_variables_num)
 {
-    printf("\nResult of Simplex method:\n");
+    printf("\n--------------------------\n");
+    printf("Result of Simplex method:\n");
     for (int index = 0; index < non_basic_variables_num; ++index)
         printf("x%d=0\n", non_basic_variables[index]);
 
     for (int index = 0; index < table_rows - 1; ++index)
-        printf("x%d=%f\n", basic_variables[index], table[index][0]);
+        printf("x%d=%.3f\n", basic_variables[index], table[index][0]);
 
-    printf("f=%f\n", table[table_rows - 1][0]);
+    printf("f=%.3f\n", table[table_rows - 1][0]);
 }
 
 int main(int argc, char **argv)
@@ -337,6 +344,7 @@ int main(int argc, char **argv)
     printf("\nYour optimization problem:\n");
     printf("--------------------------\n");
     printf("Function to optimize: f(x)");
+    printf("We are looking for the function's: %s\n", function->optimum_type == MAX ? "max" : "min");
 
     Variables_t *function_variables = function->variables;
     Variable_t *function_variable = function_variables->head;
@@ -349,7 +357,7 @@ int main(int argc, char **argv)
         if (coefficient > 0 && variable_index > 0)
             printf("+");
 
-        printf("%fx%d", coefficient, function_variable->index);
+        printf("%.3fx%d", coefficient, function_variable->index);
         function_variable = function_variable->next;
         ++variable_index;
     }
