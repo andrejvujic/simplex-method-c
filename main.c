@@ -6,6 +6,7 @@
 #include "variables.h"
 
 #define EPS 1e-6
+#define MAX_STEPS 1000
 
 extern int yyparse(void);
 extern FILE *yyin;
@@ -256,6 +257,12 @@ int is_another_step_required(float **table, int table_rows, int table_cols, int 
 
 void simplex_step(float **table, int table_rows, int table_cols, int *basic_variables, int *non_basic_variables, int basic_variables_num, int non_basic_variables_num, int optimum_type, int step_index)
 {
+    if (step_index + 1 > MAX_STEPS)
+    {
+        printf("\nAlgorithm didn't converege 1000 steps...\nAre you sure that the optimum if your function isn't infinity?\nIf you think that more steps are required you can edit the macro which defines the max step count.\n");
+        exit(1);
+    }
+
     printf("\n--------------------------\n");
     printf("Performing Simplex step number %d:\n", step_index + 1);
     // Looking for the function maximum...
@@ -360,7 +367,8 @@ int main(int argc, char **argv)
 
     if (yyparse())
     {
-        free_problem(problem.function, problem.constraints);
+        printf("Please check if your problem specification follows the rules.\n");
+        free_problem(&problem.function, &problem.constraints);
         exit(1);
     }
 
@@ -372,8 +380,8 @@ int main(int argc, char **argv)
 
     printf("\nYour optimization problem:\n");
     printf("--------------------------\n");
-    printf("Function to optimize: f(x)");
-    printf("We are looking for the function's: %s\n", function->optimum_type == MAX ? "max" : "min");
+    printf("Function to optimize: f(x)\n");
+    printf("We are looking for the function %s\n", function->optimum_type == MAX ? "maximum" : "minimum.");
 
     Variables_t *function_variables = function->variables;
     Variable_t *function_variable = function_variables->head;
