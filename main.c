@@ -109,7 +109,7 @@ int get_pivot_row(float **table, float *division_result, int pivot_col, int tabl
     // TODO: Implement checking if any positive division results even exist.
 
     float smallest = FLT_MAX;
-    int pivot_row = 0;
+    int pivot_row = -1;
     // We need to find the smallest positive value... That
     // element's row becomes the pivot row.
     for (int row_index = 0; row_index < table_rows - 1; ++row_index)
@@ -281,6 +281,8 @@ void simplex_step(float **table, int table_rows, int table_cols, int *basic_vari
 
     int pivot_row = get_pivot_row(table, division_result, pivot_col, table_rows);
     free(division_result);
+    if (pivot_row == -1)
+        return;
 
     printf("\nThe pivot element is (%d, %d) = %.3f\n", pivot_row, pivot_col, table[pivot_row][pivot_col]);
 
