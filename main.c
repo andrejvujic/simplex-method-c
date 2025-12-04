@@ -273,7 +273,7 @@ void simplex_step(float **table, int table_rows, int table_cols, int *basic_vari
 
     printf("Dividing first column elements by corresponding pivot column elements...\n");
 
-    float *division_result = (float *)malloc(sizeof(float *) * (table_rows - 1));
+    float *division_result = (float *)malloc(sizeof(float) * (table_rows - 1));
     for (int row_index = 0; row_index < table_rows - 1; ++row_index)
     {
         float value1 = table[row_index][0];
@@ -288,6 +288,7 @@ void simplex_step(float **table, int table_rows, int table_cols, int *basic_vari
 
     int pivot_row = get_pivot_row(table, division_result, pivot_col, table_rows);
     free(division_result);
+    division_result = NULL;
     if (pivot_row == -1)
         return;
 
@@ -339,6 +340,7 @@ void free_problem(Function_t **function, Constraints_t **constraints)
         {
             Constraint_t *constraint = (*constraints)->head;
             (*constraints)->head = constraint->next;
+            free_variables(constraint->variables);
             free(constraint);
         }
         free(*constraints);
@@ -369,8 +371,10 @@ int main(int argc, char **argv)
     {
         printf("Please check if your problem specification follows the rules.\n");
         free_problem(&problem.function, &problem.constraints);
+        fclose(yyin);
         exit(1);
     }
+    fclose(yyin);
 
     Function_t *function = problem.function;
     Constraints_t *constraints = problem.constraints;
@@ -413,13 +417,12 @@ int main(int argc, char **argv)
         constraint = constraint->next;
     }
     printf("--------------------------\n");
-    fclose(yyin);
 
     int non_basic_variables_num = function->variables_num;
     int basic_variables_num = last_variable_index - function->variables_num;
 
-    int *non_basic_variables = (int *)(malloc(sizeof(int) * basic_variables_num));
-    int *basic_variables = (int *)(malloc(sizeof(int) * non_basic_variables_num));
+    int *non_basic_variables = (int *)(malloc(sizeof(int) * non_basic_variables_num));
+    int *basic_variables = (int *)(malloc(sizeof(int) * basic_variables_num));
 
     // At the start of the algorithm the additional variables are the
     // basic variables.
@@ -462,8 +465,8 @@ int main(int argc, char **argv)
     // Freeing the table:
     for (int index = 0; index < table_rows; ++index)
         free(table[index]);
+
     free(table);
-    table = NULL;
 
     // Freeing the optimization problem
     // including the function, constraints and
@@ -471,7 +474,6 @@ int main(int argc, char **argv)
     free_problem(&function, &constraints);
 
     free(basic_variables);
-    basic_variables = NULL;
+
     free(non_basic_variables);
-    non_basic_variables = NULL;
 }
