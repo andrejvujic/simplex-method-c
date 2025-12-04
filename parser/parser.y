@@ -26,13 +26,14 @@
 
 %union {
     int i;
+    float f;
     char *s;
 }
 
 %token _FUNCTION_DEFINITION
 %token <i> _OPTIMUM_TYPE
 %token <s> _VAR
-%token <i> _NUM
+%token <f> _NUM
 %token _EQ
 %token _PLUS
 %token _MINUS
