@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <float.h>
 #include "types.h"
 #include "constraints.h"
 #include "variables.h"
+
+#define EPS 1e-6
 
 extern int yyparse(void);
 extern FILE *yyin;
@@ -51,15 +54,15 @@ void populate_non_basic_variables(Variables_t *function_variables, int *basic_va
     }
 }
 
-void populate_basic_variables(int last_variable_index, int *non_basic_variables, int non_basic_variables_num)
+void populate_basic_variables(int max_variable_index, int *non_basic_variables, int non_basic_variables_num)
 {
     int index = 0;
     while (index < non_basic_variables_num)
-        non_basic_variables[index++] = ++last_variable_index;
+        non_basic_variables[index++] = ++max_variable_index;
 }
 
 void populate_table(
-    int **table, int table_rows, int table_cols,
+    float **table, int table_rows, int table_cols,
     int *basic_variables, int *non_basic_variables,
     int basic_variables_num, int non_basic_variables_num,
     Function_t *function, Constraints_t *constraints)
@@ -91,14 +94,217 @@ void populate_table(
     }
 }
 
-void print_table(int **table, int table_rows, int table_cols)
+void print_table(float **table, int table_rows, int table_cols)
 {
     for (int i = 0; i < table_rows; ++i)
     {
         for (int j = 0; j < table_cols; ++j)
-            printf("%d ", table[i][j]);
+            printf("%f ", table[i][j]);
         printf("\n");
     }
+}
+
+int get_pivot_row(float **table, float *division_result, int pivot_col, int table_rows)
+{
+    // TODO: Implement checking if any positive division results even exist.
+
+    float smallest = FLT_MAX;
+    int pivot_row = 0;
+    // We need to find the smallest positive value... That
+    // element's row becomes the pivot row.
+    for (int row_index = 0; row_index < table_rows - 1; ++row_index)
+    {
+        printf("%f -> %f\n", table[row_index][pivot_col], division_result[row_index]);
+
+        // We need the smallest positive value...
+        // Negative values can be skipped.
+        if (division_result[row_index] < 0)
+            continue;
+
+        if (division_result[row_index] < smallest)
+        {
+            smallest = division_result[row_index];
+            pivot_row = row_index;
+        }
+    }
+    return pivot_row;
+}
+
+int get_pivot_column(float **table, int table_rows, int table_cols, int optimum_type)
+{
+    // Calculates the pivot column based on
+    // which optimum type we're looking for - either the minimum
+    // or the maxmimum of the function.
+    int pivot_col = 0;
+    switch (optimum_type)
+    {
+    case MAX:
+    {
+        float smallest = FLT_MAX;
+
+        for (int col_index = 1; col_index < table_cols; ++col_index)
+            if (table[table_rows - 1][col_index] < smallest)
+            {
+                smallest = table[table_rows - 1][col_index];
+                pivot_col = col_index;
+            }
+
+        printf("\nSmallest value: %f, column index: %d\n", smallest, pivot_col);
+        break;
+    }
+    case MIN:
+    {
+        float biggest = FLT_MIN;
+
+        for (int col_index = 1; col_index < table_cols; ++col_index)
+            if (table[table_rows - 1][col_index] > biggest)
+            {
+                biggest = table[table_rows - 1][col_index];
+                pivot_col = col_index;
+            }
+
+        printf("\nBiggest value: %f, column index: %d\n", biggest, pivot_col);
+        break;
+    }
+    }
+
+    return pivot_col;
+}
+
+void repopulate_table(float **table, int table_rows, int table_cols, int pivot_row, int pivot_col)
+{
+    float pivot = table[pivot_row][pivot_col];
+
+    float **table_copy = (float **)malloc(sizeof(float *) * table_rows);
+    for (int index = 0; index < table_rows; ++index)
+        table_copy[index] = (float *)malloc(sizeof(float) * table_cols);
+
+    for (int row_index = 0; row_index < table_rows; ++row_index)
+        for (int col_index = 0; col_index < table_cols; ++col_index)
+            table_copy[row_index][col_index] = table[row_index][col_index];
+
+    for (int row_index = 0; row_index < table_rows; ++row_index)
+        for (int col_index = 0; col_index < table_cols; ++col_index)
+        {
+            if (row_index == pivot_row && col_index == pivot_col)
+            {
+                table[row_index][col_index] = 1.0 / pivot;
+                continue;
+            }
+
+            if (row_index == pivot_row)
+            {
+                // The element is located in the pivot row.
+                table[row_index][col_index] = table_copy[row_index][col_index] / pivot;
+                continue;
+            }
+
+            if (col_index == pivot_col)
+            {
+                // The element is located in the pivot column.
+                table[row_index][col_index] = -table_copy[row_index][col_index] / pivot;
+                continue;
+            }
+
+            float pivot_col_element = table_copy[row_index][pivot_col];
+            float pivot_row_element = table_copy[pivot_row][col_index];
+            table[row_index][col_index] = table_copy[row_index][col_index] - pivot_row_element * pivot_col_element / pivot;
+        }
+
+    // Free the copy of the table:
+    for (int index = 0; index < table_rows; ++index)
+        free(table_copy[index]);
+    free(table_copy);
+}
+
+void swap_variables(int *basic_variables, int *non_basic_variables, int pivot_row, int pivot_col)
+{
+    int adjusted_pivot_col = pivot_col - 1;
+    int tmp = non_basic_variables[adjusted_pivot_col];
+    non_basic_variables[adjusted_pivot_col] = basic_variables[pivot_row];
+    basic_variables[pivot_row] = tmp;
+}
+
+int is_another_step_required(float **table, int table_rows, int table_cols, int optimum_type)
+{
+    // Checks if there's more room for optimization... If we have to
+    // do another step of the Simplex method.
+    for (int col_index = 1; col_index < table_cols; ++col_index)
+    {
+        float value = table[table_rows - 1][col_index];
+        switch (optimum_type)
+        {
+        case MAX:
+            if (value < 0)
+                return 1;
+            break;
+
+        case MIN:
+            if (value > 0)
+                return 1;
+            break;
+        }
+    }
+
+    return 0;
+}
+
+void simplex_step(float **table, int table_rows, int table_cols, int *basic_variables, int *non_basic_variables, int basic_variables_num, int non_basic_variables_num, int optimum_type, int step_index)
+{
+    printf("\nPerforming Simplex step number %d:\n", step_index + 1);
+    // Looking for the function maximum...
+    // We need to find the smallest (negative) number in the
+    // of last row of the Simplex table.
+
+    int pivot_col = get_pivot_column(table, table_rows, table_cols, optimum_type);
+
+    printf("Dividing first column elements by corresponding pivot column elements...\n");
+
+    float *division_result = (float *)malloc(sizeof(float *) * (table_rows - 1));
+    for (int row_index = 0; row_index < table_rows - 1; ++row_index)
+    {
+        float value1 = table[row_index][0];
+        float value2 = table[row_index][pivot_col];
+        if (value2 > -EPS && value2 < EPS)
+        {
+            division_result[row_index] = FLT_MAX;
+            continue;
+        }
+        division_result[row_index] = value1 / value2;
+    }
+
+    int pivot_row = get_pivot_row(table, division_result, pivot_col, table_rows);
+    free(division_result);
+
+    printf("\nThe pivot element is (%d, %d) = %f\n", pivot_row, pivot_col, table[pivot_row][pivot_col]);
+
+    printf("\nSwapping variables and recalculating table elements...\n");
+    swap_variables(basic_variables, non_basic_variables, pivot_row, pivot_col);
+    repopulate_table(table, table_rows, table_cols, pivot_row, pivot_col);
+
+    print_table(table, table_rows, table_cols);
+
+    // We need to check if another Simplex method step is required.
+    if (is_another_step_required(table, table_rows, table_cols, optimum_type))
+        simplex_step(
+            table,
+            table_rows, table_cols,
+            basic_variables, non_basic_variables,
+            basic_variables_num, non_basic_variables_num,
+            optimum_type,
+            step_index + 1);
+}
+
+void print_simplex_results(float **table, int table_rows, int table_cols, int *basic_variables, int *non_basic_variables, int basic_variables_num, int non_basic_variables_num)
+{
+    printf("\nResult of Simplex method:\n");
+    for (int index = 0; index < non_basic_variables_num; ++index)
+        printf("x%d=0\n", non_basic_variables[index]);
+
+    for (int index = 0; index < table_rows - 1; ++index)
+        printf("x%d=%f\n", basic_variables[index], table[index][0]);
+
+    printf("f=%f\n", table[table_rows - 1][0]);
 }
 
 int main(int argc, char **argv)
@@ -137,13 +343,13 @@ int main(int argc, char **argv)
     int variable_index = 0;
     while (function_variable != NULL)
     {
-        function_variable->coefficient = -1 * function_variable->coefficient;
-        int coefficient = function_variable->coefficient;
+        function_variable->coefficient = -1.0 * function_variable->coefficient;
+        float coefficient = function_variable->coefficient;
 
         if (coefficient > 0 && variable_index > 0)
             printf("+");
 
-        printf("%dx%d", coefficient, function_variable->index);
+        printf("%fx%d", coefficient, function_variable->index);
         function_variable = function_variable->next;
         ++variable_index;
     }
@@ -166,12 +372,13 @@ int main(int argc, char **argv)
 
     int non_basic_variables_num = function->variables_num;
     int basic_variables_num = last_variable_index - function->variables_num;
+
     int *non_basic_variables = (int *)(malloc(sizeof(int) * basic_variables_num));
     int *basic_variables = (int *)(malloc(sizeof(int) * non_basic_variables_num));
 
     // At the start of the algorithm the additional variables are the
     // basic variables.
-    populate_basic_variables(last_variable_index, basic_variables, basic_variables_num);
+    populate_basic_variables(max_variable_index, basic_variables, basic_variables_num);
 
     // Extract function variables into the non basic variables.
     // This means that the function variables will be zero at the start
@@ -184,9 +391,9 @@ int main(int argc, char **argv)
     int table_rows = basic_variables_num + 1;
     int table_cols = non_basic_variables_num + 1;
 
-    int **table = (int **)malloc(sizeof(int *) * table_rows);
+    float **table = (float **)malloc(sizeof(float *) * table_rows);
     for (int index = 0; index < table_rows; ++index)
-        table[index] = (int *)malloc(sizeof(int) * table_cols);
+        table[index] = (float *)malloc(sizeof(float) * table_cols);
     populate_table(
         table,
         table_rows, table_cols,
@@ -194,6 +401,16 @@ int main(int argc, char **argv)
         basic_variables_num, non_basic_variables_num,
         function, constraints);
     print_table(table, table_rows, table_cols);
+
+    simplex_step(
+        table,
+        table_rows, table_cols,
+        basic_variables, non_basic_variables,
+        basic_variables_num, non_basic_variables_num,
+        function->optimum_type,
+        0);
+
+    print_simplex_results(table, table_rows, table_cols, basic_variables, non_basic_variables, basic_variables_num, non_basic_variables_num);
 
     // Freeing of allocated memory:
     for (int index = 0; index < table_rows; ++index)

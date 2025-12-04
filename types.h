@@ -21,7 +21,8 @@ enum ConstraintType
 typedef struct Variable
 {
     struct Variable *next;
-    int coefficient, index;
+    float coefficient;
+    int index;
 } Variable_t;
 
 typedef struct Variables
@@ -33,7 +34,8 @@ typedef struct Constraint
 {
     struct Constraint *next;
     Variables_t *variables;
-    int value, type;
+    float value;
+    int type;
 } Constraint_t;
 
 typedef struct Constraints

@@ -50,17 +50,17 @@ void print_constraint(Constraint_t *constraint)
 
     while (variable != NULL)
     {
-        int coefficient = variable->coefficient;
+        float coefficient = variable->coefficient;
         if (coefficient > 0 && variable_index > 0)
             printf("+");
 
-        printf("%dx%d", variable->coefficient, variable->index);
+        printf("%fx%d", variable->coefficient, variable->index);
 
         variable = variable->next;
         ++variable_index;
     }
 
-    printf("%s%d", (constraint->type == LT ? "<=" : ">="), constraint->value);
+    printf("%s%f", (constraint->type == LT ? "<=" : ">="), constraint->value);
 }
 
 void print_transformed_constraint(Constraint_t *constraint)
@@ -70,17 +70,17 @@ void print_transformed_constraint(Constraint_t *constraint)
 
     while (variable != NULL)
     {
-        int coefficient = variable->coefficient;
+        float coefficient = variable->coefficient;
         if (coefficient > 0 && variable_index > 0)
             printf("+");
 
-        printf("%dx%d", variable->coefficient, variable->index);
+        printf("%fx%d", variable->coefficient, variable->index);
 
         variable = variable->next;
         ++variable_index;
     }
 
-    printf("=%d", constraint->value);
+    printf("=%f", constraint->value);
 
     printf("\n");
 }

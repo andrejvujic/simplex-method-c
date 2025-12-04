@@ -29,7 +29,8 @@
     char *s;
 }
 
-%token _FUNDEF
+%token _FUNCTION_DEFINITION
+%token <i> _OPTIMUM_TYPE
 %token <s> _VAR
 %token <i> _NUM
 %token _EQ
@@ -52,11 +53,12 @@ simplex_problem
     ;
 
 function
-    : _FUNDEF _EQ variables _SEMICOLON
+    : _OPTIMUM_TYPE _FUNCTION_DEFINITION _EQ variables _SEMICOLON
     {
         function = (Function_t*)malloc(sizeof(Function_t));
         function->variables = current_variables;
         function->variables_num = current_variables_num;
+        function->optimum_type = $1;
         current_variables = NULL;
         current_variables_num = 0;
     }

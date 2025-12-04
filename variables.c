@@ -18,7 +18,7 @@ void insert_into_variables_list(Variables_t *variables, Variable_t *element)
     head->next = element;
 }
 
-void parse_variable(Variables_t *current_variables, Variable_t **last_variable, int coefficient, char *variable_str)
+void parse_variable(Variables_t *current_variables, Variable_t **last_variable, float coefficient, char *variable_str)
 {
     int index = extract_index_from_variable(variable_str);
     Variable_t *variable = (Variable_t *)malloc(sizeof(Variable_t));
@@ -46,7 +46,7 @@ int extract_index_from_variable(char *variable)
     return value;
 }
 
-int get_variable_coefficient_by_index(Variables_t *variables, int index)
+float get_variable_coefficient_by_index(Variables_t *variables, int index)
 {
     Variable_t *variable = variables->head;
     while (variable != NULL)
