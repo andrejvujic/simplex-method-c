@@ -18,6 +18,16 @@ void insert_into_variables_list(Variables_t *variables, Variable_t *element)
     head->next = element;
 }
 
+void free_variables(Variables_t *variables)
+{
+    while (variables->head != NULL)
+    {
+        Variable_t *variable = variables->head;
+        variables->head = variable->next;
+        free(variable);
+    }
+}
+
 void parse_variable(Variables_t *current_variables, Variable_t **last_variable, float coefficient, char *variable_str)
 {
     int index = extract_index_from_variable(variable_str);

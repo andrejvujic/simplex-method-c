@@ -316,6 +316,29 @@ void print_simplex_results(float **table, int table_rows, int table_cols, int *b
     printf("f=%.3f\n", table[table_rows - 1][0]);
 }
 
+void free_problem(Function_t **function, Constraints_t **constraints)
+{
+    if (*function != NULL)
+    {
+        Variables_t *variables = (*function)->variables;
+        free_variables(variables);
+        free(*function);
+        *function = NULL;
+    }
+
+    if (*constraints != NULL)
+    {
+        while ((*constraints)->head != NULL)
+        {
+            Constraint_t *constraint = (*constraints)->head;
+            (*constraints)->head = constraint->next;
+            free(constraint);
+        }
+        free(*constraints);
+        *constraints = NULL;
+    }
+}
+
 int main(int argc, char **argv)
 {
     if (argc != 2)
@@ -326,7 +349,7 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    printf("Reading and parsing optimization problem! from: %s\n", argv[1]);
+    printf("Reading and parsing optimization problem from: %s\n", argv[1]);
 
     yyin = fopen(argv[1], "r");
     if (!yyin)
@@ -335,7 +358,11 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    yyparse();
+    if (yyparse())
+    {
+        free_problem(problem.function, problem.constraints);
+        exit(1);
+    }
 
     Function_t *function = problem.function;
     Constraints_t *constraints = problem.constraints;
@@ -423,10 +450,20 @@ int main(int argc, char **argv)
     print_simplex_results(table, table_rows, table_cols, basic_variables, non_basic_variables, basic_variables_num, non_basic_variables_num);
 
     // Freeing of allocated memory:
+
+    // Freeing the table:
     for (int index = 0; index < table_rows; ++index)
         free(table[index]);
     free(table);
+    table = NULL;
+
+    // Freeing the optimization problem
+    // including the function, constraints and
+    // their variables...
+    free_problem(&function, &constraints);
 
     free(basic_variables);
+    basic_variables = NULL;
     free(non_basic_variables);
+    non_basic_variables = NULL;
 }
