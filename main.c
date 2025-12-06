@@ -141,7 +141,7 @@ int get_pivot_column(float **table, int table_rows, int table_cols, int optimum_
     // Calculates the pivot column based on
     // which optimum type we're looking for - either the minimum
     // or the maxmimum of the function.
-    int pivot_col = 0;
+    int pivot_col = -1;
     switch (optimum_type)
     {
     case MAX:
@@ -155,7 +155,8 @@ int get_pivot_column(float **table, int table_rows, int table_cols, int optimum_
                 pivot_col = col_index;
             }
 
-        printf("\nSmallest value: %.3f, column index: %d\n", smallest, pivot_col);
+        if (pivot_col >= 0)
+            printf("\nSmallest value: %.3f, column index: %d\n", smallest, pivot_col);
         break;
     }
     case MIN:
@@ -169,7 +170,8 @@ int get_pivot_column(float **table, int table_rows, int table_cols, int optimum_
                 pivot_col = col_index;
             }
 
-        printf("\nBiggest value: %.3f, column index: %d\n", biggest, pivot_col);
+        if (pivot_col >= 0)
+            printf("\nBiggest value: %.3f, column index: %d\n", biggest, pivot_col);
         break;
     }
     }
@@ -263,13 +265,12 @@ void simplex_step(float **table, int table_rows, int table_cols, int *basic_vari
         exit(1);
     }
 
+    int pivot_col = get_pivot_column(table, table_rows, table_cols, optimum_type);
+    if (pivot_col < 0)
+        return;
+
     printf("\n--------------------------\n");
     printf("Performing Simplex step number %d:\n", step_index + 1);
-    // Looking for the function maximum...
-    // We need to find the smallest (negative) number in the
-    // of last row of the Simplex table.
-
-    int pivot_col = get_pivot_column(table, table_rows, table_cols, optimum_type);
 
     printf("Dividing first column elements by corresponding pivot column elements...\n");
 
