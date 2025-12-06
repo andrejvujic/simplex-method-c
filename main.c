@@ -385,12 +385,13 @@ int main(int argc, char **argv)
 
     printf("\nYour optimization problem:\n");
     printf("--------------------------\n");
-    printf("Function to optimize: f(x)\n");
+    printf("Function to optimize:\n");
     printf("We are looking for the function %s\n", function->optimum_type == MAX ? "maximum" : "minimum.");
 
     Variables_t *function_variables = function->variables;
     Variable_t *function_variable = function_variables->head;
     int variable_index = 0;
+    printf("f(x)");
     while (function_variable != NULL)
     {
         function_variable->coefficient = -1.0 * function_variable->coefficient;
@@ -417,7 +418,7 @@ int main(int argc, char **argv)
         print_transformed_constraint(constraint);
         constraint = constraint->next;
     }
-    printf("--------------------------\n");
+    printf("\n--------------------------\n");
 
     int non_basic_variables_num = function->variables_num;
     int basic_variables_num = last_variable_index - function->variables_num;
@@ -449,6 +450,8 @@ int main(int argc, char **argv)
         basic_variables, non_basic_variables,
         basic_variables_num, non_basic_variables_num,
         function, constraints);
+
+    printf("Initial Simplex table:\n");
     print_table(table, table_rows, table_cols);
 
     simplex_step(
