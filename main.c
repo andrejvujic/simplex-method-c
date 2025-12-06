@@ -6,7 +6,7 @@
 #include "variables.h"
 
 #define EPS 1e-6
-#define MAX_STEPS 1000
+#define MAX_STEPS 20
 
 extern int yyparse(void);
 extern FILE *yyin;
@@ -261,7 +261,7 @@ void simplex_step(float **table, int table_rows, int table_cols, int *basic_vari
 {
     if (step_index + 1 > MAX_STEPS)
     {
-        printf("\nAlgorithm didn't converege 1000 steps...\nAre you sure that the optimum if your function isn't infinity?\nIf you think that more steps are required you can edit the macro which defines the max step count.\n");
+        printf("\nAlgorithm didn't converege %d step(s)...\nAre you sure that the optimum if your function isn't infinity?\nIf you think that more steps are required you can edit the macro which defines the max step count.\n", MAX);
         exit(1);
     }
 
