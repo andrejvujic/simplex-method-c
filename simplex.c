@@ -1,6 +1,6 @@
+#include <stdio.h>
 #include "simplex.h"
 #include "string.h"
-#include <stdio.h>
 #include "lib/fort/fort.h"
 
 void print_table(
