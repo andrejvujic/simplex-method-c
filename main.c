@@ -4,6 +4,7 @@
 #include "types.h"
 #include "constraints.h"
 #include "variables.h"
+#include "simplex.h"
 
 #define EPS 1e-6
 #define MAX_STEPS 20
@@ -92,16 +93,6 @@ void populate_table(
             table[current_row][current_col++] = get_variable_coefficient_by_index(function->variables, non_basic_variables[index]);
 
         function_variable = function_variable->next;
-    }
-}
-
-void print_table(float **table, int table_rows, int table_cols)
-{
-    for (int i = 0; i < table_rows; ++i)
-    {
-        for (int j = 0; j < table_cols; ++j)
-            printf("%.3f ", table[i][j]);
-        printf("\n");
     }
 }
 
@@ -299,7 +290,10 @@ void simplex_step(float **table, int table_rows, int table_cols, int *basic_vari
     swap_variables(basic_variables, non_basic_variables, pivot_row, pivot_col);
     repopulate_table(table, table_rows, table_cols, pivot_row, pivot_col);
 
-    print_table(table, table_rows, table_cols);
+    print_table(
+        table, table_rows, table_cols,
+        non_basic_variables, non_basic_variables_num,
+        basic_variables, basic_variables_num);
 
     // We need to check if another Simplex method step is required.
     if (is_another_step_required(table, table_rows, table_cols, optimum_type))
@@ -310,19 +304,6 @@ void simplex_step(float **table, int table_rows, int table_cols, int *basic_vari
             basic_variables_num, non_basic_variables_num,
             optimum_type,
             step_index + 1);
-}
-
-void print_simplex_results(float **table, int table_rows, int table_cols, int *basic_variables, int *non_basic_variables, int basic_variables_num, int non_basic_variables_num)
-{
-    printf("\n--------------------------\n");
-    printf("Result of Simplex method:\n");
-    for (int index = 0; index < non_basic_variables_num; ++index)
-        printf("x%d=0\n", non_basic_variables[index]);
-
-    for (int index = 0; index < table_rows - 1; ++index)
-        printf("x%d=%.3f\n", basic_variables[index], table[index][0]);
-
-    printf("f=%.3f\n", table[table_rows - 1][0]);
 }
 
 void free_problem(Function_t **function, Constraints_t **constraints)
@@ -452,7 +433,10 @@ int main(int argc, char **argv)
         function, constraints);
 
     printf("Initial Simplex table:\n");
-    print_table(table, table_rows, table_cols);
+    print_table(
+        table, table_rows, table_cols,
+        non_basic_variables, non_basic_variables_num,
+        basic_variables, basic_variables_num);
 
     simplex_step(
         table,
@@ -462,9 +446,7 @@ int main(int argc, char **argv)
         function->optimum_type,
         0);
 
-    print_simplex_results(table, table_rows, table_cols, basic_variables, non_basic_variables, basic_variables_num, non_basic_variables_num);
-
-    // Freeing of allocated memory:
+    print_result(table, table_rows, table_cols, basic_variables, basic_variables_num, non_basic_variables, non_basic_variables_num);
 
     // Freeing the table:
     for (int index = 0; index < table_rows; ++index)

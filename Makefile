@@ -12,7 +12,7 @@ parser/lex.yy.c: parser/parser.tab.c parser/lexer.l
 	$(FLEX) -o parser/lex.yy.c parser/lexer.l
 
 $(OUTPUT): parser/parser.tab.c parser/lex.yy.c main.c constraints.c variables.c
-	$(CC) -o $(OUTPUT) main.c parser/parser.tab.c parser/lex.yy.c constraints.c variables.c
+	$(CC) -o $(OUTPUT) main.c parser/parser.tab.c parser/lex.yy.c constraints.c variables.c simplex.c lib/fort/fort.c
 
 clean:
 	rm -rf parser/parser.tab.c
